@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>每日運勢 | 拾音塔羅</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Noto Serif TC for "可畫和劑方刻體-繁" 風格 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;900&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Noto Serif TC 微調，模擬方刻體那種帶有雕刻感、古樸且高質感的字體 */
+    .font-carve {
+      font-family: 'Noto Serif TC', serif;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+    }
+    .font-body {
+      font-family: 'Noto Serif TC', serif;
+      font-weight: 400;
+    }
+    
+    /* 背景基底：淡紫色 #b6afd8 搭配神秘漸變 */
+    body {
+      background: radial-gradient(circle at center, #c3bddf 0%, #b6afd8 60%, #9a92c0 100%);
+      color: #2d264a;
+      overflow-x: hidden;
+    }
+
+    /* 星空微光動畫 */
+    .sparkle {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: float 6s infinite ease-in-out;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(0.8); opacity: 0.15; }
+      50% { transform: translateY(-40px) scale(1.4); opacity: 0.9; }
+    }
+
+    /* 3D 翻牌專用 */
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+    .preserve-3d {
+      transform-style: preserve-3d;
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+
+    /* 調整卡片底色為「高質感暖米白 (Warm Cream)」並增加陰影對比，使其在淡紫背景上十分醒目 */
+    .tarot-card-bg {
+      background: rgba(251, 249, 244, 0.95); /* 高質感米白，稍微提高不透明度 */
+      border: 1.5px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 15px 35px rgba(45, 38, 74, 0.18), inset 0 0 20px rgba(212, 175, 55, 0.05);
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.28);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+    }
+    
+    /* 預約占卜按鈕調淡，米白質感融合，呼吸光暈 */
+    .glass-btn {
+      background: rgba(251, 249, 244, 0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-btn:hover {
+      background: rgba(251, 249, 244, 0.8);
+      box-shadow: 0 10px 25px rgba(255, 255, 255, 0.5);
+      transform: translateY(-2px);
+    }
+
+    /* 歐式細線裝飾框 (深古銅金與米白線) */
+    .european-border {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      border: 1px solid rgba(184, 134, 11, 0.45); /* 古銅金 */
+      pointer-events: none;
+    }
+    .european-border::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      right: 4px;
+      bottom: 4px;
+      border: 0.5px dashed rgba(184, 134, 11, 0.25);
+    }
+
+    /* 自訂捲軸 */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(182, 175, 216, 0.5);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="font-body min-h-screen relative flex flex-col justify-between py-10 px-4">
+
+  <!-- 背景裝飾微光星辰 -->
+  <div id="stars-container" class="absolute inset-0 overflow-hidden pointer-events-none z-0"></div>
+
+  <!-- 主內容區 -->
+  <main class="max-w-4xl mx-auto w-full z-10 flex flex-col items-center">
+    
+    <!-- 頂部置中標題 -->
+    <header class="text-center mb-10 w-full">
+      <h1 class="font-carve text-4xl md:text-5xl text-[#2d264a] drop-shadow-sm tracking-widest uppercase mb-2">
+        每日運勢
+      </h1>
+      <div class="w-24 h-[1px] bg-gradient-to-r from-transparent via-[#2d264a]/60 to-transparent mx-auto"></div>
+      <p class="text-xs text-[#2d264a]/70 tracking-widest mt-2 uppercase font-light">
+        — Shi Yin Tarot 拾音塔羅 —
+      </p>
+    </header>
+
+    <!-- 卡牌占卜區域 -->
+    <div class="w-full flex flex-col items-center justify-center min-h-[480px] mb-12">
+      
+      <!-- 卡牌容器 (兩張) -->
+      <div id="cards-wrapper" class="w-full max-w-2xl grid grid-cols-2 gap-6 md:gap-12 transition-all duration-700 ease-in-out">
+        
+        <!-- 左卡：星辰指引 -->
+        <div id="card-1" onclick="flipCard(1)" class="perspective-1000 cursor-pointer group transition-all duration-700">
+          <div id="card-inner-1" class="preserve-3d relative w-full aspect-[2/3.5] max-w-[240px] mx-auto rounded-2xl tarot-card-bg transition-transform duration-[1000ms]">
+            
+            <!-- 牌背 (正面未翻開)：繁複奢華歐式占星儀細線設計 -->
+            <div class="backface-hidden absolute inset-0 w-full h-full p-4 flex flex-col justify-between rounded-2xl overflow-hidden">
+              <div class="european-border"></div>
+              
+              <!-- 頂部角隅裝飾 -->
+              <div class="flex justify-between text-[#b8860b]/70 text-[10px] pointer-events-none">
+                <span>Ⅰ</span>
+                <span>Ⅰ</span>
+              </div>
+              
+              <!-- 中間極細緻歐式幾何星盤 -->
+              <div class="flex-1 flex flex-col items-center justify-center relative my-4">
+                <svg class="w-[85%] h-[85%] text-[#b8860b]/70" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="0.6">
+                  <!-- 同心圓星盤軌道 -->
+                  <circle cx="50" cy="50" r="44" />
+                  <circle cx="50" cy="50" r="41" stroke-dasharray="0.5, 1" />
+                  <circle cx="50" cy="50" r="35" />
+                  <circle cx="50" cy="50" r="32" stroke-dasharray="1.5, 1.5" />
+                  <circle cx="50" cy="50" r="23" />
+                  <circle cx="50" cy="50" r="20" stroke-dasharray="0.5, 0.8" />
+                  
+                  <!-- 刻度與角度射線 -->
+                  <line x1="50" y1="6" x2="50" y2="94" stroke-width="0.4" />
+                  <line x1="6" y1="50" x2="94" y2="50" stroke-width="0.4" />
+                  <line x1="18.8" y1="18.8" x2="81.2" y2="81.2" stroke-width="0.3" stroke-dasharray="1, 1" />
+                  <line x1="81.2" y1="18.8" x2="18.8" y2="81.2" stroke-width="0.3" stroke-dasharray="1, 1" />
+                  
+                  <!-- 內軌星座標記 -->
+                  <circle cx="50" cy="23" r="1.5" fill="currentColor" />
+                  <circle cx="50" cy="77" r="1.5" fill="currentColor" />
+                  <circle cx="23" cy="50" r="1.5" fill="currentColor" />
+                  <circle cx="77" cy="50" r="1.5" fill="currentColor" />
+                  <circle cx="31" cy="31" r="1" fill="currentColor" />
+                  <circle cx="69" cy="31" r="1" fill="currentColor" />
+                  <circle cx="31" cy="69" r="1" fill="currentColor" />
+                  <circle cx="69" cy="69" r="1" fill="currentColor" />
+
+                  <!-- 古典星辰與精細星系連線 -->
+                  <path d="M50 34 L54 44 L64 44 L56 50 L60 60 L50 53 L40 60 L44 50 L36 44 L46 44 Z" stroke-width="0.5" />
+                  <circle cx="50" cy="48.5" r="2" />
+                  
+                  <!-- 四角星雲點綴 -->
+                  <path d="M50 12 L51 16 L54 17 L51 18 L50 22 L49 18 L46 17 L49 16 Z" fill="currentColor" stroke="none" />
+                  <path d="M17 50 L21 49 L22 46 L23 49 L27 50 L23 51 L22 54 L21 51 Z" fill="currentColor" stroke="none" />
+                  <path d="M83 50 L81 49 L80 46 L79 49 L75 50 L79 51 L80 54 L81 51 Z" fill="currentColor" stroke="none" />
+                  <path d="M50 88 L51 84 L54 83 L51 82 L50 78 L49 82 L46 83 L49 84 Z" fill="currentColor" stroke="none" />
+                  
+                  <!-- 細密點狀星群 -->
+                  <circle cx="40" cy="30" r="0.6" fill="currentColor" />
+                  <circle cx="62" cy="28" r="0.6" fill="currentColor" />
+                  <circle cx="35" cy="65" r="0.6" fill="currentColor" />
+                  <circle cx="68" cy="60" r="0.6" fill="currentColor" />
+                </svg>
+                <div class="absolute text-[11px] tracking-[0.25em] text-[#2d264a] font-carve mt-28">星 辰 指 引</div>
+              </div>
+
+              <!-- 底部角隅裝飾 -->
+              <div class="flex justify-between text-[#b8860b]/70 text-[10px] pointer-events-none">
+                <span>Ⅰ</span>
+                <span>Ⅰ</span>
+              </div>
+            </div>
+
+            <!-- 牌面 (翻開後)：溫暖米底 + 咖啡金歐式邊框 + 完美比例避免重疊 -->
+            <div class="backface-hidden rotate-y-180 absolute inset-0 w-full h-full p-4 flex flex-col justify-between rounded-2xl overflow-hidden">
+              <div class="european-border" style="border-color: rgba(184, 134, 11, 0.3)"></div>
+              <div class="flex justify-between text-[#2d264a]/70 text-xs relative z-10">
+                <span>★ NO.17</span>
+                <span>THE STAR</span>
+              </div>
+              
+              <!-- 牌面主圖案 -->
+              <div class="h-[40%] flex items-center justify-center relative z-10 mt-2">
+                <svg class="h-full aspect-square text-[#2d264a]" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="0.8">
+                  <circle cx="50" cy="50" r="42" stroke-dasharray="3, 3" />
+                  <!-- 八角星 -->
+                  <path d="M50 12 L54 36 L78 36 L59 50 L66 74 L50 59 L34 74 L41 50 L22 36 L46 36 Z" fill="none" />
+                  <circle cx="50" cy="50" r="8" />
+                  <line x1="50" y1="5" x2="50" y2="95" stroke-width="0.5" />
+                  <line x1="5" y1="50" x2="95" y2="50" stroke-width="0.5" />
+                </svg>
+              </div>
+
+              <!-- 牌面名字完全置於圖案下方 (絕對獨立、不重疊) -->
+              <div class="text-center flex-1 flex flex-col justify-center relative z-10 bg-gradient-to-t from-transparent via-[#fbf9f4]/60 to-transparent">
+                <h3 class="text-xl font-carve text-[#2d264a] tracking-widest">希望與啟盟</h3>
+                <p class="text-[10px] tracking-wider text-[#2d264a]/60 mt-1.5">THE STAR · 星辰</p>
+              </div>
+
+              <div class="text-center text-[10px] text-[#2d264a]/50 relative z-10 mb-1">
+                SHI YIN TAROT
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 右卡：命運之輪 -->
+        <div id="card-2" onclick="flipCard(2)" class="perspective-1000 cursor-pointer group transition-all duration-700">
+          <div id="card-inner-2" class="preserve-3d relative w-full aspect-[2/3.5] max-w-[240px] mx-auto rounded-2xl tarot-card-bg transition-transform duration-[1000ms]">
+            
+            <!-- 牌背 (正面未翻開)：繁複奢華歐式命運軌道細線設計 -->
+            <div class="backface-hidden absolute inset-0 w-full h-full p-4 flex flex-col justify-between rounded-2xl overflow-hidden">
+              <div class="european-border"></div>
+              
+              <!-- 頂部角隅裝飾 -->
+              <div class="flex justify-between text-[#b8860b]/70 text-[10px] pointer-events-none">
+                <span>Ⅱ</span>
+                <span>Ⅱ</span>
+              </div>
+              
+              <!-- 中間極細緻歐式太陽/輪軌幾何 -->
+              <div class="flex-1 flex flex-col items-center justify-center relative my-4">
+                <svg class="w-[85%] h-[85%] text-[#b8860b]/70" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="0.6">
+                  <!-- 太陽放射與命運同心軌道 -->
+                  <circle cx="50" cy="50" r="44" />
+                  <circle cx="50" cy="50" r="41" stroke-dasharray="1, 1" />
+                  <circle cx="50" cy="50" r="33" />
+                  <circle cx="50" cy="50" r="30" stroke-dasharray="2, 1" />
+                  <circle cx="50" cy="50" r="18" />
+                  <circle cx="50" cy="50" r="15" stroke-dasharray="0.5, 0.5" />
+                  
+                  <!-- 太陽光芒細線放射 -->
+                  <path d="M50 6 L50 15 M50 85 L50 94 M6 50 L15 50 M85 50 L94 50" stroke-width="0.5" />
+                  <path d="M18.8 18.8 L25 25 M75 75 L81.2 81.2 M18.8 81.2 L25 75 M75 25 L81.2 18.8" stroke-width="0.5" />
+                  <!-- 加密細線輔助射線 -->
+                  <path d="M50 50 L67 31 M50 50 L33 69 M50 50 L33 31 M50 50 L67 69" stroke-width="0.2" />
+                  <path d="M50 50 L58 17 M50 50 L42 83 M50 50 L17 42 M50 50 L83 58" stroke-width="0.2" />
+                  
+                  <!-- 核心古典細面與幾何眼 -->
+                  <circle cx="50" cy="50" r="6" fill="none" />
+                  <path d="M47 48.5 C48 47.5 52 47.5 53 48.5" stroke-width="0.5" />
+                  <path d="M47 51 C48 52 52 52 53 51" stroke-width="0.5" />
+                  
+                  <!-- 精細微點與光芒連線 -->
+                  <circle cx="50" cy="22" r="1.2" fill="currentColor" />
+                  <circle cx="50" cy="78" r="1.2" fill="currentColor" />
+                  <circle cx="22" cy="50" r="1.2" fill="currentColor" />
+                  <circle cx="78" cy="50" r="1.2" fill="currentColor" />
+                  
+                  <!-- 外部浮動星點 -->
+                  <circle cx="28" cy="28" r="0.6" fill="currentColor" />
+                  <circle cx="72" cy="28" r="0.6" fill="currentColor" />
+                  <circle cx="28" cy="72" r="0.6" fill="currentColor" />
+                  <circle cx="72" cy="72" r="0.6" fill="currentColor" />
+                </svg>
+                <div class="absolute text-[11px] tracking-[0.25em] text-[#2d264a] font-carve mt-28">命 運 之 鑰</div>
+              </div>
+
+              <!-- 底部角隅裝飾 -->
+              <div class="flex justify-between text-[#b8860b]/70 text-[10px] pointer-events-none">
+                <span>Ⅱ</span>
+                <span>Ⅱ</span>
+              </div>
+            </div>
+
+            <!-- 牌面 (翻開後)：溫慢米底 + 咖啡金歐式邊框 + 完美比例避免重疊 -->
+            <div class="backface-hidden rotate-y-180 absolute inset-0 w-full h-full p-4 flex flex-col justify-between rounded-2xl overflow-hidden">
+              <div class="european-border" style="border-color: rgba(184, 134, 11, 0.3)"></div>
+              <div class="flex justify-between text-[#2d264a]/70 text-xs relative z-10">
+                <span>★ NO.10</span>
+                <span>WHEEL OF FORTUNE</span>
+              </div>
+              
+              <!-- 牌面主圖案 -->
+              <div class="h-[40%] flex items-center justify-center relative z-10 mt-2">
+                <svg class="h-full aspect-square text-[#2d264a]" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="0.8">
+                  <circle cx="50" cy="50" r="36" />
+                  <circle cx="50" cy="50" r="29" />
+                  <circle cx="50" cy="50" r="11" />
+                  <!-- 輪軸幅條 -->
+                  <line x1="50" y1="14" x2="50" y2="86" stroke-width="0.6" />
+                  <line x1="14" y1="50" x2="86" y2="50" stroke-width="0.6" />
+                  <line x1="24" y1="24" x2="76" y2="76" stroke-width="0.4" />
+                  <line x1="76" y1="24" x2="24" y2="76" stroke-width="0.4" />
+                  <!-- 神秘符號 -->
+                  <circle cx="50" cy="20.5" r="2" fill="currentColor" />
+                  <circle cx="50" cy="79.5" r="2" fill="currentColor" />
+                  <circle cx="20.5" cy="50" r="2" fill="currentColor" />
+                  <circle cx="79.5" cy="50" r="2" fill="currentColor" />
+                </svg>
+              </div>
+
+              <!-- 牌面名字完全置於圖案下方 (絕對獨立、不重疊) -->
+              <div class="text-center flex-1 flex flex-col justify-center relative z-10 bg-gradient-to-t from-transparent via-[#fbf9f4]/60 to-transparent">
+                <h3 class="text-xl font-carve text-[#2d264a] tracking-widest">機遇與變革</h3>
+                <p class="text-[10px] tracking-wider text-[#2d264a]/60 mt-1.5">FORTUNE · 命運之輪</p>
+              </div>
+
+              <div class="text-center text-[10px] text-[#2d264a]/50 relative z-10 mb-1">
+                SHI YIN TAROT
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 完整解牌文字顯示區 (初始隱藏，在牌下方顯示，分段美化排版) -->
+      <div id="interpretation-panel" class="w-full max-w-2xl mt-10 hidden opacity-0 transition-opacity duration-1000">
+        <div class="glass-card rounded-2xl p-6 md:p-8 text-[#2d264a] relative overflow-hidden">
+          <div class="european-border" style="border-color: rgba(45, 38, 74, 0.15)"></div>
+          
+          <div class="text-center mb-6 relative z-10">
+            <span class="text-xs uppercase tracking-[0.3em] text-[#2d264a]/60">— 今日占卜解析 —</span>
+            <h2 id="result-title" class="font-carve text-2xl mt-2 tracking-widest text-[#2d264a]">命運之輪</h2>
+            <div class="w-12 h-[1px] bg-[#2d264a]/30 mx-auto mt-3"></div>
+          </div>
+          
+          <!-- 深度細緻解析 (分段顯示，強化閱讀節奏與美感) -->
+          <div id="result-text-container" class="text-sm md:text-base leading-relaxed text-[#2d264a]/90 tracking-wide text-justify font-light relative z-10 px-2 md:px-6 space-y-4">
+            <!-- 動態填入段落 -->
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-[#2d264a]/10 flex flex-wrap justify-around text-xs text-[#2d264a]/70 relative z-10">
+            <div><strong class="font-carve">幸運色：</strong><span id="lucky-color">金色</span></div>
+            <div><strong class="font-carve">今日指引：</strong><span id="lucky-advice">順應變化，主動出擊</span></div>
+          </div>
+        </div>
+
+        <!-- 重新抽牌按鈕 -->
+        <div class="flex justify-center mt-6">
+          <button onclick="resetTarot()" class="text-xs tracking-[0.2em] text-[#2d264a]/60 hover:text-[#2d264a] transition-colors flex items-center gap-1">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 重新感應運勢
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 一對一預約占卜按鈕 (優雅淡米色微光，呼吸發光特效) -->
+    <div class="w-full max-w-md text-center mb-24 relative z-10">
+      <a href="https://lin.ee/wrYLShV" target="_blank" class="inline-flex flex-col items-center justify-center w-full py-4 px-8 rounded-full glass-btn text-[#2d264a] shadow-lg relative group overflow-hidden">
+        <!-- 呼吸發光背景特效 -->
+        <span class="absolute inset-0 bg-white/30 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000 animate-pulse"></span>
+        <div class="flex items-center gap-2 relative z-10">
+          <i data-lucide="calendar" class="w-5 h-5 text-[#2d264a]/80"></i>
+          <span class="font-carve text-base md:text-lg tracking-[0.25em]">預約專屬一對一占卜</span>
+          <i data-lucide="arrow-right" class="w-4 h-4 text-[#2d264a]/60 group-hover:translate-x-1 transition-transform"></i>
+        </div>
+        <span class="text-[9px] tracking-widest text-[#2d264a]/60 mt-0.5 relative z-10 uppercase">點擊直接連線 LINE 預約諮詢</span>
+      </a>
+    </div>
+
+    <!-- 拾音塔羅 IG 精選文章區 -->
+    <section class="w-full border-t border-white/20 pt-12 mb-20">
+      <div class="text-center mb-8">
+        <h2 class="font-carve text-2xl text-[#2d264a] tracking-widest flex items-center justify-center gap-2">
+          <i data-lucide="instagram" class="w-5 h-5"></i> 拾音精選文章專欄
+        </h2>
+        <p class="text-[10px] tracking-widest text-[#2d264a]/60 mt-1 uppercase">塔羅專屬心靈指引</p>
+      </div>
+      
+      <!-- IG 模擬卡片網格 -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <!-- 篇 1 (補上 glass-card 相關樣式) -->
+        <a href="https://www.instagram.com/reel/DX3_sGHvxUB/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==" target="_blank" class="glass-card p-4 rounded-xl hover:-translate-y-1 transition-all duration-300 group">
+          <div class="aspect-square bg-white/20 rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
+            <!-- 歐式簡約細線背景圖 -->
+            <svg class="w-2/3 h-2/3 text-[#2d264a]/30 absolute" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="0.5">
+              <circle cx="50" cy="50" r="30" />
+              <path d="M50 10 L50 90 M10 50 L90 50" />
+            </svg>
+            <i data-lucide="sparkles" class="w-8 h-8 text-[#d4af37]/60 group-hover:scale-110 transition-transform"></i>
+          </div>
+          <h4 class="text-xs font-carve text-[#2d264a] mb-1 truncate">這段感情只剩回憶了嗎</h4>
+          <p class="text-[9px] text-[#2d264a]/60 line-clamp-2">那些留下的回憶，是真的結束，還是還有餘溫</p>
+        </a>
+
+        <!-- 篇 2 -->
+        <a href="https://www.instagram.com/reel/DYmV531hJXA/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==" target="_blank" class="glass-card p-4 rounded-xl hover:-translate-y-1 transition-all duration-300 group">
+          <div class="aspect-square bg-white/20 rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
+            <svg class="w-2/3 h-2/3 text-[#2d264a]/30 absolute" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="0.5">
+              <path d="M30 20 L70 80 M70 20 L30 80" />
+              <circle cx="50" cy="50" r="20" />
+            </svg>
+            <i data-lucide="moon" class="w-8 h-8 text-[#d4af37]/60 group-hover:scale-110 transition-transform"></i>
+          </div>
+          <h4 class="text-xs font-carve text-[#2d264a] mb-1 truncate">距離讓你們變遠了嗎？</h4>
+          <p class="text-[9px] text-[#2d264a]/60 line-clamp-2">真正拉開你們的，也許不是距離，而是心裡早已累積的失落</p>
+        </a>
+
+        <!-- 篇 3 (補上 glass-card 相關樣式) -->
+        <a href="https://www.instagram.com/reel/DWwaV5lDL6y/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==" target="_blank" class="glass-card p-4 rounded-xl hover:-translate-y-1 transition-all duration-300 group">
+          <div class="aspect-square bg-white/20 rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
+            <svg class="w-2/3 h-2/3 text-[#2d264a]/30 absolute" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="0.5">
+              <rect x="25" y="25" width="50" height="50" />
+              <circle cx="50" cy="50" r="15" />
+            </svg>
+            <i data-lucide="compass" class="w-8 h-8 text-[#d4af37]/60 group-hover:scale-110 transition-transform"></i>
+          </div>
+          <h4 class="text-xs font-carve text-[#2d264a] mb-1 truncate">你總是遇到爛桃花的真相</h4>
+          <p class="text-[9px] text-[#2d264a]/60 line-clamp-2">總是遇到不對的人，也許不是你不好，而是你還沒看懂自己的感情模式</p>
+        </a>
+
+        <!-- 篇 4 -->
+        <a href="https://www.instagram.com/reel/DYuHsK-vFhg/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==" target="_blank" class="glass-card p-4 rounded-xl hover:-translate-y-1 transition-all duration-300 group">
+          <div class="aspect-square bg-white/20 rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
+            <svg class="w-2/3 h-2/3 text-[#2d264a]/30 absolute" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="0.5">
+              <circle cx="50" cy="50" r="35" stroke-dasharray="1,2" />
+              <polygon points="50,15 15,75 85,75" />
+            </svg>
+            <i data-lucide="sun" class="w-8 h-8 text-[#d4af37]/60 group-hover:scale-110 transition-transform"></i>
+          </div>
+          <h4 class="text-xs font-carve text-[#2d264a] mb-1 truncate">捨不得的只有我嗎？</h4>
+          <p class="text-[9px] text-[#2d264a]/60 line-clamp-2">明明已經分開，卻還想知道他是不是也有不捨，一起來看解答吧。</p>
+        </a>
+      </div>
+    </section>
+
+    <!-- 好評分享區 (高質感自適應滑動式卡片牆，完美展現您指定的兩張全新好評圖片) -->
+    <section class="w-full border-t border-white/20 pt-12 pb-6">
+      <div class="text-center mb-8">
+        <h2 class="font-carve text-2xl text-[#2d264a] tracking-widest flex items-center justify-center gap-2">
+          <i data-lucide="award" class="w-5 h-5"></i> 拾音好評反饋
+        </h2>
+        <p class="text-[10px] tracking-widest text-[#2d264a]/60 mt-1 uppercase">手指左右滑動或點擊箭頭觀看個案回饋</p>
+      </div>
+
+      <!-- 滑動卡片容器 (一次僅顯示一張，尺寸更大且完全自適應比例) -->
+      <div class="relative w-full max-w-[340px] md:max-w-[380px] mx-auto overflow-hidden">
+        
+        <!-- 卡片滑軌 -->
+        <div id="carousel-track" class="flex transition-transform duration-500 ease-out cursor-grab active:cursor-grabbing" style="transform: translateX(0px);">
+          
+          <!-- 好評 1 (新網址 1：https://ppt.cc/fvwydx@.png) -->
+          <div class="w-full flex-shrink-0 px-2 box-border">
+            <div class="bg-white/40 p-2.5 rounded-2xl shadow-lg border border-white/50 text-center">
+              <div class="rounded-xl overflow-hidden bg-[#ece9f2]/50 w-full">
+                <img src="https://ppt.cc/fvwydx@.png" alt="拾音塔羅 占卜回饋 1" class="w-full h-auto object-contain block pointer-events-none rounded-lg">
+              </div>
+              <span class="text-xs text-[#2d264a]/80 font-carve block mt-3 tracking-widest">
+                — 深度精準 · 溫柔同理 —
+              </span>
+            </div>
+          </div>
+
+          <!-- 好評 2 (新網址 2：https://ppt.cc/fJ1TGx@.png) -->
+          <div class="w-full flex-shrink-0 px-2 box-border">
+            <div class="bg-white/40 p-2.5 rounded-2xl shadow-lg border border-white/50 text-center">
+              <div class="rounded-xl overflow-hidden bg-[#ece9f2]/50 w-full">
+                <img src="https://ppt.cc/fJ1TGx@.png" alt="拾音塔羅 占卜回饋 2" class="w-full h-auto object-contain block pointer-events-none rounded-lg">
+              </div>
+              <span class="text-xs text-[#2d264a]/80 font-carve block mt-3 tracking-widest">
+                — 溫暖引導 · 撥雲見日 —
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 左右控制按鈕 (精緻歐風鍍金感箭頭) -->
+        <button onclick="slidePrev()" class="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/70 backdrop-blur-sm border border-white/80 text-[#2d264a] flex items-center justify-center hover:bg-white transition-colors shadow-md z-20">
+          <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </button>
+        <button onclick="slideNext()" class="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/70 backdrop-blur-sm border border-white/80 text-[#2d264a] flex items-center justify-center hover:bg-white transition-colors shadow-md z-20">
+          <i data-lucide="chevron-right" class="w-5 h-5"></i>
+        </button>
+
+        <!-- 滑動指示點 (Dots) -->
+        <div class="flex justify-center gap-2 mt-4">
+          <button onclick="slideTo(0)" id="dot-0" class="w-2 h-2 rounded-full bg-[#2d264a] transition-all duration-300"></button>
+          <button onclick="slideTo(1)" id="dot-1" class="w-2 h-2 rounded-full bg-[#2d264a]/30 transition-all duration-300"></button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 頁尾 -->
+  <footer class="w-full text-center mt-12 border-t border-white/10 pt-6 z-10 text-[10px] text-[#2d264a]/50 tracking-[0.2em] uppercase">
+    &copy; Shi Yin Tarot 拾音塔羅
+  </footer>
+
+  <!-- 互動腳本與翻牌邏輯 -->
+  <script>
+    // 初始化 Lucide 圖標
+    lucide.createIcons();
+
+    // 動態產生背景微光星塵 (粒子量維持 50 顆)
+    const starsContainer = document.getElementById('stars-container');
+    const starCount = 50;
+    for (let i = 0; i < starCount; i++) {
+      const star = document.createElement('div');
+      star.className = 'sparkle';
+      const size = Math.random() * 3.5 + 1;
+      star.style.width = `${size}px`;
+      star.style.height = `${size}px`;
+      star.style.left = `${Math.random() * 100}%`;
+      star.style.top = `${Math.random() * 100}%`;
+      star.style.animationDelay = `${Math.random() * 6}s`;
+      star.style.animationDuration = `${Math.random() * 7 + 4}s`;
+      starsContainer.appendChild(star);
+    }
+
+    // 牌庫與高質感 200 字解析數據
+    const tarotDatabase = {
+      1: {
+        title: "星辰指引 · 希望之光",
+        paragraphs: [
+          "今天你幸運地抽到了充滿療癒與宇宙深深祝福的「星辰」牌。這代表著你目前正行走在正確且光明的人生軌道上，過去那些反覆折磨你的迷茫、壓力與困惑，都將如同清晨溫柔升起的霧氣般自然消退。",
+          "星辰牌正溫柔地向你傳遞宇宙的訊息：請重新拾起對生活、對自己的信任。生命正悄悄為你引路，你不需要過度焦慮當下的停滯或不確定。學會保持內心的純粹、柔軟與寧靜，如同夜空中那顆恆久閃爍的星，你所企盼的豐盛、清明與愛便會隨之流淌而來。",
+          "今天非常適合為自己保留一段空白的時間。可以試著安排冥想、心靈書寫、或是沉浸在能讓你感到平靜的創作之中。在與內在靈魂溫柔對話的片刻裡，你將會獲得意想不到的奇妙靈感與安寧力量。"
+        ],
+        color: "銀河藍 & 晨曦金",
+        advice: "傾聽直覺，對宇宙的溫柔安排保持全然的信任。"
+      },
+      2: {
+        title: "命運之鑰 · 契機與重塑",
+        paragraphs: [
+          "今天你充滿力量地抽到了象徵生生不息、時來運轉的「命運之輪」牌。這是一個非常清晰的訊號，預示著一個全新的重要運勢轉折點、或是一個期盼已久的全新契機，此時此刻正在向你迎面靠近。",
+          "不論先前你在工作、感情或是心靈層面經歷了怎樣的卡頓與重複考驗，命運的齒輪現在已經開始加速前行。這張牌帶來了極佳的破局勇氣，提醒你必須展現彈性與智慧，順應這股新生的流動，主動跨出以往守舊的安全區。",
+          "今天在人際交流或重要事務的決策中，請大膽保持全然開放、幽默且富有創造力的態度。別害怕與平時不同的觀念或合作邀約，這股由內而外散發的鮮活能量，將會在轉瞬間為你打開另一扇驚喜的大門。"
+        ],
+        color: "琥珀金 & 丁香紫",
+        advice: "主動擁抱生活中的新流動，轉機就在你跨出腳步的瞬間。"
+      }
+    };
+
+    // 音效合成系統：採用 Web Audio API 模擬極輕細的「紙質翻頁與輕風鈴聲」
+    function playFlipSound() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        
+        // 1. 模擬「紙張摩擦」的白噪音
+        const bufferSize = ctx.sampleRate * 0.15;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+        
+        const noiseFilter = ctx.createBiquadFilter();
+        noiseFilter.type = 'bandpass';
+        noiseFilter.frequency.setValueAtTime(1000, ctx.currentTime);
+        noiseFilter.Q.setValueAtTime(3, ctx.currentTime);
+        
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.04, ctx.currentTime);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(ctx.destination);
+        
+        // 2. 模擬「空靈風鈴」的高頻音
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(2200, ctx.currentTime);
+        
+        oscGain.gain.setValueAtTime(0.02, ctx.currentTime);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        
+        osc.connect(oscGain);
+        oscGain.connect(ctx.destination);
+        
+        // 啟動與播放
+        noise.start();
+        osc.start();
+        noise.stop(ctx.currentTime + 0.2);
+        osc.stop(ctx.currentTime + 0.3);
+      } catch (e) {
+        console.log("Audio failed to auto-play due to browser limits:", e);
+      }
+    }
+
+    // 翻卡主邏輯
+    let cardFlipped = false;
+
+    function flipCard(chosenId) {
+      if (cardFlipped) return;
+      cardFlipped = true;
+
+      // 1. 播放極輕柔的實時翻紙沙沙音
+      playFlipSound();
+
+      const otherId = chosenId === 1 ? 2 : 1;
+      const chosenCard = document.getElementById(`card-${chosenId}`);
+      const otherCard = document.getElementById(`card-${otherId}`);
+      const cardInner = document.getElementById(`card-inner-${chosenId}`);
+      const wrapper = document.getElementById('cards-wrapper');
+
+      // 2. 另一張牌溫柔淡出消失
+      otherCard.classList.add('opacity-0', 'scale-90', 'pointer-events-none');
+      
+      setTimeout(() => {
+        // 將未選卡牌佔用的空間完全隱藏，以便被選中的卡牌優雅置中放大
+        otherCard.classList.add('hidden');
+        
+        // 3. 調整卡牌佈局，使其置中放大
+        wrapper.classList.remove('grid-cols-2');
+        wrapper.classList.add('grid-cols-1', 'max-w-xs');
+        
+        // 4. 觸發 3D 旋轉翻面
+        cardInner.classList.add('rotate-y-180');
+
+        // 5. 翻轉完成後，緩緩顯示下方的深度解析文字（優雅分段）
+        setTimeout(() => {
+          const panel = document.getElementById('interpretation-panel');
+          const data = tarotDatabase[chosenId];
+          
+          document.getElementById('result-title').innerText = data.title;
+          
+          // 清空舊解析段落，並動態組裝分段 HTML
+          const textContainer = document.getElementById('result-text-container');
+          textContainer.innerHTML = '';
+          data.paragraphs.forEach(pText => {
+            const pElement = document.createElement('p');
+            pElement.className = 'text-sm md:text-base leading-relaxed tracking-wide text-justify font-light';
+            pElement.innerText = pText;
+            textContainer.appendChild(pElement);
+          });
+
+          document.getElementById('lucky-color').innerText = data.color;
+          document.getElementById('lucky-advice').innerText = data.advice;
+          
+          panel.classList.remove('hidden');
+          setTimeout(() => {
+            panel.classList.remove('opacity-0');
+            panel.classList.add('opacity-100');
+          }, 50);
+        }, 600);
+
+      }, 500);
+    }
+
+    // 重新抽牌按鈕 (Reset)
+    function resetTarot() {
+      cardFlipped = false;
+      
+      const panel = document.getElementById('interpretation-panel');
+      panel.classList.remove('opacity-100');
+      panel.classList.add('opacity-0');
+      
+      setTimeout(() => {
+        panel.classList.add('hidden');
+        
+        // 重置所有卡牌樣式與位置
+        const card1 = document.getElementById('card-1');
+        const card2 = document.getElementById('card-2');
+        const inner1 = document.getElementById('card-inner-1');
+        const inner2 = document.getElementById('card-inner-2');
+        const wrapper = document.getElementById('cards-wrapper');
+
+        inner1.classList.remove('rotate-y-180');
+        inner2.classList.remove('rotate-y-180');
+
+        card1.classList.remove('hidden', 'opacity-0', 'scale-90', 'pointer-events-none');
+        card2.classList.remove('hidden', 'opacity-0', 'scale-90', 'pointer-events-none');
+        
+        wrapper.classList.remove('grid-cols-1', 'max-w-xs');
+        wrapper.classList.add('grid-cols-2');
+      }, 500);
+    }
+
+    // ==========================================
+    // 好評滑動卡片牆 (Carousel with swipe gestures)
+    // ==========================================
+    let carouselIndex = 0;
+    const totalSlides = 2; // 精確展示這兩張最新指定反饋圖
+    const track = document.getElementById('carousel-track');
+    
+    function updateCarousel() {
+      // 依據索引進行水平位移
+      const offset = -carouselIndex * 100;
+      track.style.transform = `translateX(${offset}%)`;
+      
+      // 更新指示點 (Dots) 的高亮樣式
+      for (let i = 0; i < totalSlides; i++) {
+        const dot = document.getElementById(`dot-${i}`);
+        if (dot) {
+          if (i === carouselIndex) {
+            dot.classList.remove('bg-[#2d264a]/30');
+            dot.classList.add('bg-[#2d264a]', 'w-4'); // 當前點點拉長更美觀
+          } else {
+            dot.classList.remove('bg-[#2d264a]', 'w-4');
+            dot.classList.add('bg-[#2d264a]/30');
+          }
+        }
+      }
+    }
+
+    function slideNext() {
+      if (carouselIndex >= totalSlides - 1) {
+        carouselIndex = 0;
+      } else {
+        carouselIndex++;
+      }
+      updateCarousel();
+    }
+
+    function slidePrev() {
+      if (carouselIndex <= 0) {
+        carouselIndex = totalSlides - 1;
+      } else {
+        carouselIndex--;
+      }
+      updateCarousel();
+    }
+
+    function slideTo(index) {
+      carouselIndex = index;
+      updateCarousel();
+    }
+
+    // 手指滑動與滑鼠拖曳邏輯支援 (觸控手勢)
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    track.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, {passive: true});
+
+    track.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    }, {passive: true});
+
+    // 滑鼠拖曳支援 (桌機體驗優化)
+    let isDragging = false;
+    let dragStartX = 0;
+
+    track.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      dragStartX = e.pageX;
+    });
+
+    track.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      e.preventDefault();
+    });
+
+    track.addEventListener('mouseup', (e) => {
+      if (!isDragging) return;
+      const dragEndX = e.pageX;
+      isDragging = false;
+      const threshold = 50; // 滑動閾值
+      if (dragStartX - dragEndX > threshold) {
+        slideNext(); // 向左滑動，展示下一張
+      } else if (dragEndX - dragStartX > threshold) {
+        slidePrev(); // 向右滑動，展示上一張
+      }
+    });
+
+    track.addEventListener('mouseleave', () => {
+      isDragging = false;
+    });
+
+    function handleSwipe() {
+      const threshold = 40; // 滑動閾值像素
+      if (touchStartX - touchEndX > threshold) {
+        slideNext(); // 向左滑動，跳下一張（或循環）
+      } else if (touchEndX - touchStartX > threshold) {
+        slidePrev(); // 向右滑動，跳上一張
+      }
+    }
+
+    // 初始化滑動位置
+    updateCarousel();
+  </script>
+</body>
+</html>
